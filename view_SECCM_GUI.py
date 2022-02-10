@@ -1,32 +1,20 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 from scipy.io import loadmat
 from collections import defaultdict
 from matplotlib.backends.backend_tkagg import (
                                     FigureCanvasTkAgg, NavigationToolbar2Tk)
 from tkinter import *
 import os
-from tkinter import ttk
+from tkinter.filedialog import asksaveasfilename
+from tkinter import ttk, messagebox
 from matplotlib.figure import Figure
-
+from figConfig_overlap import FigConfig_overlap
 
 
 class View_SECCM_GUI():
-    def __init__(self, master, seccm_mat, sel_seccm_filename = None, EDX_filepaths = None):
-        if sel_seccm_filename:
-            self.sel_seccm_filename = sel_seccm_filename
-            master.title(sel_seccm_filename)
-            self.EDX_filepaths = EDX_filepaths
-
-
-        self.data = defaultdict(dict)
-        self.shape = seccm_mat.shape
-
-        for i in range(self.shape[0]):
-            for j in range(self.shape[1]):
-                self.data[i,j]['x'] = seccm_mat[j, i][0][0]
-                self.data[i,j]['y'] = seccm_mat[j, i][0][1]
-
+    def __init__(self, master):
 
         f_l = Frame(master)
         f_r = Frame(master)
@@ -36,12 +24,13 @@ class View_SECCM_GUI():
         #leftside
         para_f = Frame(f_l)
         self.voltage_var = DoubleVar()
-        v1, v2 = np.min(self.data[0, 0]['x']), np.max(self.data[0, 0]['x'])
-        self.voltage_var.set((v2-v1)/5)
+        # v1, v2 = np.min(self.data[0, 0]['x']), np.max(self.data[0, 0]['x'])
+        # self.voltage_var.set((v2-v1)/5)
 
         scale_f = LabelFrame(para_f, text = 'change potential')
-        voltage_s = Scale(scale_f, from_= v1, to=v2, orient='horizontal', length = 500, variable = self.voltage_var, command = self.on_change_map, resolution = (v2-v1)/100)
-        voltage_s.pack()
+        self.voltage_s = Scale(scale_f,orient='horizontal', length = 500, variable = self.voltage_var, command = self.on_change_map)
+        # self.voltage_s = Scale(scale_f, from_= v1, to=v2, orient='horizontal', length = 500, variable = self.voltage_var, command = self.on_change_map, resolution = (v2-v1)/100)
+        self.voltage_s.pack()
 
         #volatage range
         v_f = LabelFrame(para_f)
@@ -64,20 +53,22 @@ class View_SECCM_GUI():
         #select cmap
         self.cmap_cb_var = StringVar()
         cmap_f = LabelFrame(f_bb, text = 'select colormaps')
-        cmap_cb = ttk.Combobox(cmap_f, textvariable = self.cmap_cb_var, values = ['binary', 'Greys', 'ocean', 'YlOrRd', 'jet', 'Set1'])
+        cmap_cb = ttk.Combobox(cmap_f, textvariable = self.cmap_cb_var, values  = ['Accent', 'Accent_r', 'Blues', 'Blues_r', 'BrBG', 'BrBG_r', 'BuGn', 'BuGn_r', 'BuPu', 'BuPu_r', 'CMRmap', 'CMRmap_r', 'Dark2', 'Dark2_r', 'GnBu', 'GnBu_r', 'Greens', 'Greens_r', 'Greys', 'Greys_r', 'OrRd', 'OrRd_r', 'Oranges', 'Oranges_r', 'PRGn', 'PRGn_r', 'Paired', 'Paired_r', 'Pastel1', 'Pastel1_r', 'Pastel2', 'Pastel2_r', 'PiYG', 'PiYG_r', 'PuBu', 'PuBuGn', 'PuBuGn_r', 'PuBu_r', 'PuOr', 'PuOr_r', 'PuRd', 'PuRd_r', 'Purples', 'Purples_r', 'RdBu', 'RdBu_r', 'RdGy', 'RdGy_r', 'RdPu', 'RdPu_r', 'RdYlBu', 'RdYlBu_r', 'RdYlGn', 'RdYlGn_r', 'Reds', 'Reds_r', 'Set1', 'Set1_r', 'Set2', 'Set2_r', 'Set3', 'Set3_r', 'Spectral', 'Spectral_r', 'Wistia', 'Wistia_r', 'YlGn', 'YlGnBu', 'YlGnBu_r', 'YlGn_r', 'YlOrBr', 'YlOrBr_r', 'YlOrRd', 'YlOrRd_r', 'afmhot', 'afmhot_r', 'autumn', 'autumn_r', 'binary', 'binary_r', 'bone', 'bone_r', 'brg', 'brg_r', 'bwr', 'bwr_r', 'cividis', 'cividis_r', 'cool', 'cool_r', 'coolwarm', 'coolwarm_r', 'copper', 'copper_r', 'cubehelix', 'cubehelix_r', 'flag', 'flag_r', 'gist_earth', 'gist_earth_r', 'gist_gray', 'gist_gray_r', 'gist_heat', 'gist_heat_r', 'gist_ncar', 'gist_ncar_r', 'gist_rainbow', 'gist_rainbow_r', 'gist_stern', 'gist_stern_r', 'gist_yarg', 'gist_yarg_r', 'gnuplot', 'gnuplot2', 'gnuplot2_r', 'gnuplot_r', 'gray', 'gray_r', 'hot', 'hot_r', 'hsv', 'hsv_r', 'inferno', 'inferno_r', 'jet', 'jet_r', 'magma', 'magma_r', 'nipy_spectral', 'nipy_spectral_r', 'ocean', 'ocean_r', 'pink', 'pink_r', 'plasma', 'plasma_r', 'prism', 'prism_r', 'rainbow', 'rainbow_r', 'seismic', 'seismic_r', 'spring', 'spring_r', 'summer', 'summer_r', 'tab10', 'tab10_r', 'tab20', 'tab20_r', 'tab20b', 'tab20b_r', 'tab20c', 'tab20c_r', 'terrain', 'terrain_r', 'turbo', 'turbo_r', 'twilight', 'twilight_r', 'twilight_shifted', 'twilight_shifted_r', 'viridis', 'viridis_r', 'winter', 'winter_r'])
         cmap_cb.pack()
         cmap_cb.current(0)
         cmap_cb.bind("<<ComboboxSelected>>", self.on_change_map)
-        export_b = Button(f_bb, text = 'export .csv', command = self.on_export)
+        export_b = Button(f_bb, text = 'export .csv', fg= 'blue', command = self.on_export)
+        self.next_b = Button(f_bb, text = 'next: overlap with EDX data', command = self.on_next, fg = 'red')
 
 
         cmap_f.grid(row = 0, column = 0, padx = (5,5), pady =(5,5), sticky = 'nw')
         export_b.grid(row = 0, column = 1,padx = (5,5), pady =(15,5), sticky = 'nw')
-
+        self.next_b.grid(row = 0, column = 2,padx = (5,5), pady =(15,5), sticky = 'nw')
 
         scale_f.pack()
         v_f.pack()
         f_bb.pack()
+        Button(para_f, text = 'clear selection', width = '20', fg= 'green', command = self.on_clear_selection).pack()
 
         fig_map = Figure(figsize = (6,6))
         self.ax_map = fig_map.add_subplot(111)
@@ -103,63 +94,21 @@ class View_SECCM_GUI():
         toolbar.update()
         self.canvas.get_tk_widget().pack(fill='both', expand=1)
 
-        v = (v2-v1)/5
-        self.matrix = np.zeros(self.shape)
-        for i in range(self.shape[0]):
-            for j in range(self.shape[1]):
-                self.matrix[i, j] = self.get_y_from_x(v, self.data[i,j]['x'], self.data[i,j]['y'])
-        self.map_fig = self.ax_map.imshow(self.matrix, cmap = 'binary')
-        self.map_cb = self.ax_map.figure.colorbar(self.map_fig)
-        self.canvas_map.draw()
+    def on_clear_selection(self):
+        pass
 
+    def on_change_map(self, e):
+        pass
+    def onclick(self, event):
+        pass
+    def on_next(self):
+        pass
     def on_export(self):
         pass
 
 
-    def get_y_from_x(self, x, array_x, array_y):
-        idx = np.abs(array_x - x).argmin()
-        return array_y[idx]
 
-    def on_change_map(self, e):
-        try:
-            self.map_cb.remove()
-            self.map_fig.remove()
-            self.vline.remove()
 
-        except:
-            pass
-        # self.ax_map.clear()
-
-        v = float(self.voltage_var.get())
-        self.matrix = np.zeros(self.shape)
-        for i in range(self.shape[0]):
-            for j in range(self.shape[1]):
-                self.matrix[i, j] = self.get_y_from_x(v, self.data[i,j]['x'], self.data[i,j]['y'])
-        vmin = np.quantile(self.matrix, float(self.min_var.get()))
-        vmax = np.quantile(self.matrix, float(self.max_var.get()))
-        cmap = self.cmap_cb_var.get()
-        self.map_fig = self.ax_map.imshow(self.matrix, vmin=vmin, vmax = vmax, cmap = cmap)
-        self.map_cb = self.ax_map.figure.colorbar(self.map_fig)
-        self.canvas_map.draw()
-
-        self.vline = self.ax.axvline(float(self.voltage_var.get()), color = 'red', linestyle = 'dashed')
-        self.canvas.draw()
-
-    def onclick(self, event):
-        self.ax.clear()
-        try:
-            self.plot_click.remove()
-        except:
-            pass
-
-        j, i =int(event.xdata+0.5), int(event.ydata+0.5)
-        x, y = self.data[i, j]['x'], self.data[i,j]['y']
-        self.ax.plot(x, y, label = f'[{i}, {j}]')
-        self.vline = self.ax.axvline(float(self.voltage_var.get()), color = 'red', linestyle = 'dashed')
-        self.plot_click, = self.ax_map.plot(j, i, 'X',  color = 'red', markeredgecolor = 'white', markersize = 8)
-        self.ax.legend()
-        self.canvas.draw()
-        self.canvas_map.draw()
 
 
 
@@ -168,11 +117,8 @@ class View_SECCM_GUI():
 
 def main():
     root = Tk()
-    m = loadmat('SECCM EDX Masking/SECCM/Sample24_L1N5_1_ORR_HER.mat')
-    for v in m.values():
-        if type(v) is np.ndarray:
-            seccm_mat = v
-            View_SECCM_GUI(root, seccm_mat)
+
+    View_SECCM_GUI(root)
 
     root.title('Visulization SECCM')
     root.mainloop()
